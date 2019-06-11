@@ -1,21 +1,22 @@
 <?php
 namespace App\Controller;
 
+// Entities
+use App\Entity\Incident;
 use App\Entity\Comment;
-use App\Form\IncidentFormType;
+
+// Form Handlers
+use App\Form\Handler\IncidentFormHandler;
+use App\Form\Handler\CommentFormHandler;
+use Hostnet\Component\FormHandler\HandlerFactoryInterface;
+
+// HTTP and routing
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 
+// Controller related
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
-
-use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-
-use App\Entity\Incident;
-use App\Form\Model\IncidentFormModel as IncidentForm;
-use App\Form\Model\CommentFormModel as CommentForm;
 
 
 
@@ -35,39 +36,15 @@ class IncidentController extends AbstractController{
     /**
      * @Route("/incidents/add", name="incident_add", methods={"GET","POST"})
      */
-    public function incident_add(Request $request)
+    public function incident_add(Request $request, HandlerFactoryInterface $handler)
     {
+        $handler = $handler->create(IncidentFormHandler::class);
         $incident = new Incident();
-        $form = $this->createForm(IncidentFormType::class, $incident);
-
-        $form->handleRequest($request);
-        if($form->isSubmitted() && $form->isValid()) {
-            $em = $this->getDoctrine();
-
-            $formData = $form->getData();
-            $incident->setTitle($formData->getTitle());
-            $incident->setDescription($formData->getDescription());
-            $incident->setPriority($formData->getPriority());
-
-            $date = new \DateTime('@'.strtotime('now'));
-            $incident->setCreatedOn($date);
-            $incident->setCreatedBy($this->get('security.token_storage')->getToken()->getUser());
-            $incident->setCategory($formData->getCategory());
-            $incident->setStatus($formData->getStatus());
-            $incident->setLocation($formData->getLocation());
-
-            if($formData->getStatus()->getId() === 3){
-                $incident->setOwner($this->get('security.token_storage')->getToken()->getUser());
-            }
-
-
-            $em->getManager()->persist($incident);
-            $em->getManager()->flush();
-
+        if($handler->handle($request, $incident)){
             return $this->redirectToRoute('incident_show', ['id' => $incident->getId()]);
         }
 
-        return $this->render('incidents/new.html.twig', ['form' => $form->createView()]);
+        return $this->render('incidents/new.html.twig', ['form' => $handler->getForm()->createView()]);
     }
 
 
@@ -116,7 +93,6 @@ class IncidentController extends AbstractController{
                 $incident->setStatus($status);
                 $em->flush();
             }
-
         }
         return $this->redirectToRoute('incident_show', ['id' => $id]);
     }
@@ -147,81 +123,32 @@ class IncidentController extends AbstractController{
     /**
      * @Route("/incidents/show/{id}/edit", name="incident_edit")
      */
-    public function incident_edit(Request $request, $id)
+    public function incident_edit(Request $request,HandlerFactoryInterface $handler, $id)
     {
-        // Get all the data from the current Incident
+        $handler = $handler->create(IncidentFormHandler::class);
         $incident = $this->getDoctrine()->getRepository('App:Incident')->find($id);
-        $form = $this->createForm(IncidentFormType::class, $incident);
-
-        // Let form handle the request
-        $form->handleRequest($request);
-
-        // If the form is valid and submitted
-        if($form->isSubmitted() && $form->isValid()) {
-            /** @var IncidentForm $editModel */
-            // Get the new data from the form
-            $editModel = $form->getData();
-            $incident->setCategory($form->getData()->getCategory());
-            $incident->setStatus($form->getData()->getStatus());
-            $incident->setLocation($form->getData()->getLocation());
-
-            // Set the new title, description and priority
-            $incident->setTitle($editModel->getTitle());
-            $incident->setDescription($editModel->getDescription());
-            $incident->setPriority($editModel->getPriority());
-
-            // Save
-            $this->getDoctrine()->getManager()->flush();
-
-            // Redirect to the incident
-            return $this->redirectToRoute('incident_show', ['id' => $id]);
+        if($handler->handle($request, $incident)){
+            return $this->redirectToRoute('incident_show', ['id' => $incident->getId()]);
         }
 
-        return $this->render('incidents/update.html.twig', ['form' => $form->createView()]);
+        return $this->render('incidents/update.html.twig', ['form' => $handler->getForm()->createView()]);
     }
 
 
     /**
      * @Route("/incidents/show/{id}", name="incident_show")
      */
-    public function incident_show(Request $request, $id)
+    public function incident_show(Request $request, HandlerFactoryInterface $handler, $id)
     {
+        $handler = $handler->create(CommentFormHandler::class);
+        $comment = new Comment();
+        $comment->setIncident($this->getDoctrine()->getRepository('App:Incident')->find($id));
+        if($handler->handle($request, $comment)){
+            return $this->redirectToRoute('incident_show', ['id' => $id]);
+        }
+
         $incident = $this->getDoctrine()->getRepository('App:Incident')->find($id);
         $comments = $incident->getComment();
-        $commentForm = new CommentForm();
-        $form = $this->createFormBuilder($commentForm)
-            ->add('title', TextType::class, array(
-                'attr' => array('class' => 'form-control'),
-                'data_class' => IncidentForm::class))
-            ->add('message', TextareaType::class, array(
-                'attr' => array('class' => 'form-control'),
-                'data_class' => IncidentForm::class))
-            ->add('save', SubmitType::class, array(
-                'label' => 'Create comment',
-                'attr' => array('class' => 'btn btn-primary mt-3')))
-            ->getForm();
-
-        $form->handleRequest($request);
-
-        if($form->isSubmitted() && $form->isValid()) {
-            /** @var IncidentForm $userModel */
-            $em = $this->getDoctrine()->getManager();
-
-            $formData = $form->getData();
-
-            $comment = new Comment();
-            $comment->setIncident($em->getRepository('App:Incident')->find($id));
-            $date = new \DateTime('@'.strtotime('now'));
-            $comment->setCreatedOn($date);
-            $comment->setTitle($formData->getTitle());
-            $comment->setMessage($formData->getMessage());
-            $comment->setOwner($this->get('security.token_storage')->getToken()->getUser());
-
-            $em->persist($comment);
-            $em->flush();
-
-            return $this->redirectToRoute('incident_show', ['id' => $incident->getId()]);
-        }
-        return $this->render('incidents/show.html.twig', ['incident' => $incident, 'comments' => $comments, 'form' => $form->createView()]);
+        return $this->render('incidents/show.html.twig', ['incident' => $incident, 'comments' => $comments, 'form' => $handler->getForm()->createView()]);
     }
 }

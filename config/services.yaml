@@ -24,5 +24,13 @@ services:
         resource: '../src/Controller'
         tags: ['controller.service_arguments']
 
+    app.form_handler.add_incident:
+        class: App\Form\Handler\IncidentFormHandler
+        arguments:
+            - "@doctrine.orm.entity_manager"
+            - "@security.token_storage"
+        tags:
+            - { name: form.handler }
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

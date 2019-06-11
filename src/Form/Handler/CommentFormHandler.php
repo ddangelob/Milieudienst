@@ -7,15 +7,15 @@
  */
 namespace App\Form\Handler;
 
-use App\Entity\Incident;
-use App\Form\IncidentFormType;
+use App\Entity\Comment;
+use App\Form\CommentFormType;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Hostnet\Component\FormHandler\HandlerConfigInterface;
 use Hostnet\Component\FormHandler\HandlerTypeInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
-final class IncidentFormHandler implements HandlerTypeInterface
+final class CommentFormHandler implements HandlerTypeInterface
 {
 
     public function __construct(
@@ -28,13 +28,13 @@ final class IncidentFormHandler implements HandlerTypeInterface
     }
     public function configure(HandlerConfigInterface $config)
     {
-        $config->setType(IncidentFormType::class);
+        $config->setType(CommentFormType::class);
 
-        $config->onSuccess(function (?Incident $incident) {
+        $config->onSuccess(function (?Comment $comment) {
             $date = new \DateTime('@'.strtotime('now'));
-            $incident->setCreatedOn($date);
-            $incident->setCreatedBy($this->token_storage->getToken()->getUser());
-            $this->em->persist($incident);
+            $comment->setCreatedOn($date);
+            $comment->setOwner($this->token_storage->getToken()->getUser());
+            $this->em->persist($comment);
             $this->em->flush();
             return true;
         });
