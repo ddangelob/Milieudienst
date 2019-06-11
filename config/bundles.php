@@ -17,5 +17,4 @@ return [
     Doctrine\Bundle\FixturesBundle\DoctrineFixturesBundle::class => ['dev' => true, 'test' => true],
     Hostnet\Bundle\FormHandlerBundle\FormHandlerBundle::class => ['all' => true],
     Hostnet\Bundle\FormHandlerBundle\HostnetFormHandlerBundle::class => ['all' => true],
-    Algolia\SearchBundle\AlgoliaSearchBundle::class => ['all' => true],
 ];
