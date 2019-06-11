@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+{% block body %}
+    <h1>Welcome {{ app.user.username }},</h1>
+    <div class="row">
+        <div class="col col-sm">
+            <div class="card">
+                <div class="card-header bg-secondary">
+                    Statistics
+                </div>
+                <div class="card-body">
+                    Total incidents: {{ stats['total'] }}<br>
+                    Total open incidents: {{ stats['open'] }}<br>
+                    Total locked incidents: {{ stats['locked'] }}
+                </div>
+            </div>
+        </div>
+        <div class="col col-md">
+            <div class="card">
+                <div class="card-header">
+                    Recent Incidents
+                </div>
+                <div class="card-body">
+                    {{ include('incidents/incidents.html.twig') }}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

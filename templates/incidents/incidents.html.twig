@@ -1,0 +1,37 @@
+{% if app.request.get('_route') == 'locked_incident_page' %}
+    <h1>Locked incidents</h1>
+{% elseif app.request.get('_route') == 'incident_page' %}
+    <h1>All incidents</h1>
+{% endif %}
+
+<table class="table table-hover">
+        <thead>
+                <tr>
+                        <th scope="col">Title</th>
+                        <th scope="col">Location</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Category</th>
+                </tr>
+        </thead>
+        <tbody>
+        {% for incident in incidents %}
+                {% if incident.status.id == 1 %}
+                    <tr class="table-success">
+                {% elseif incident.status.id == 2 %}
+                    <tr class="table-warning">
+                {% elseif incident.status.id == 3 %}
+                    <tr class="table-info">
+                {% else %}
+                    <tr>
+                {% endif %}
+                        <td><a href="{{ path('incident_show', { 'id': incident.id }) }}">{{ incident.title }}</a></td>
+                        <td>{{ incident.location.title }}</td>
+                        <td>{{ incident.status.title }}</td>
+                        <td>{{ incident.category.title }}</td>
+                {% if app.request.get('_route') == 'locked_incident_page' and incident.status.id == 3 and incident.owner.id == app.user.id %}
+                        <td><a href="{{ path('incident_change_lock', { 'id': incident.id, 'lockarg': 1 }) }}" class="btn btn-sm btn-primary">Unlock incident</a></td>
+                {% endif %}
+                    </tr>
+        {% endfor %}
+        </tbody>
+</table>

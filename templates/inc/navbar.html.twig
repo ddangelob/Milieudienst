@@ -1,0 +1,100 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
+    <a class="navbar-brand" href="{{ path('home_page') }}">MILIEUDIENST.</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarColor03" aria-controls="navbarColor03" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarColor03">
+        <ul class="navbar-nav mr-auto">
+            {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+                {% if app.request.get('_route') == 'home_page' %}
+                    <li class="nav-item active">
+                {% else %}
+                    <li class="nav-item">
+                {% endif %}
+                        <a class="nav-link" href="{{ path('home_page') }}">Home</a>
+                    </li>
+                {% if app.request.get('_route') == 'incident_page' %}
+                    <li class="nav-item active dropdown">
+                {% else %}
+                    <li class="nav-item dropdown">
+                {% endif %}
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Incidents
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="{{ path('incident_page') }}">Show incidents</a>
+                            <a class="dropdown-item" href="{{ path('incident_add') }}">Add incidents</a>
+                        </div>
+                    </li>
+                {% if is_granted('ROLE_MGMT') %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Departments
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="{{ path('app_register') }}">Employee</a>
+                            <a class="dropdown-item" href="{{ path('app_register') }}">Departments</a>
+                        </div>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Statistics
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="{{ path('app_register') }}">Daily statistics</a>
+                            <a class="dropdown-item" href="{{ path('app_register') }}">Location statistics</a>
+                            <a class="dropdown-item" href="{{ path('app_register') }}">Employee statistics</a>
+                            <a class="dropdown-item" href="{{ path('app_register') }}">Department statistics</a>
+                        </div>
+                    </li>
+                {% endif %}
+            {% endif %}
+        </ul>
+        <ul class="navbar-nav float-right">
+            {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {{ app.user.username }} {% if lockedIncidents > 0 %} <span class="badge badge-pill badge-success p-1">{{ lockedIncidents }}</span>{% endif %}
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="{{ path('locked_incident_page') }}">Locked Incidents{% if lockedIncidents > 0 %} <span class="badge badge-pill badge-success p-1">{{ lockedIncidents }}</span>{% endif %}</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ path('logout') }}">Log out</a>
+                    </div>
+                </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ path('app_login') }}">Log in</a>
+                    </li>
+            {% endif %}
+        </ul>
+        {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+        <form class="form-inline my-2 my-lg-0" id="searchForm">
+            <input class="form-control mr-sm-2" type="text" placeholder="Search" id="searchField" onkeypress="search(event)">
+            <button class="btn btn-secondary my-2 my-sm-0" type="button" onclick="searchBtn()">Search</button>
+        </form>
+        {% endif %}
+    </div>
+</nav>
+{% block javascripts %}
+<script>
+    document.querySelector("#searchForm").addEventListener("submit", function(e){
+        if(!isValid){
+            e.preventDefault();    //stop form from submitting
+        }
+    });
+    function search(e){
+        let searchValue = document.getElementById('searchField').value;
+        e = e || window.event;
+        if(e.key === 13){
+            e.preventDefault();
+            window.location.replace("{{ path('search_page') }}?search=" + searchValue);
+        }
+    }
+    function searchBtn(){
+        let searchValue = document.getElementById('searchField').value;
+        window.location.replace("{{ path('search_page') }}?search=" + searchValue);
+    }
+</script>
+{% endblock %}

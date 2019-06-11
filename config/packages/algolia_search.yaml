@@ -1,0 +1,16 @@
+# All available configuration can be found here:
+# https://www.algolia.com/doc/api-client/symfony/configuration/
+algolia_search:
+    prefix: '%env(APP_ENV)%_'
+    indices:
+      - name: Incident
+        class: App\Entity\Incident
+        enable_serializer_groups: true
+
+      - name: Comment
+        class: App\Entity\Comment
+        enable_serializer_groups: true
+
+      - name: User
+        class: App\Entity\User
+        enable_serializer_groups: true

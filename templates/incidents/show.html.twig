@@ -1,0 +1,108 @@
+{% extends 'base.html.twig' %}
+{% block body %}
+    <h1>{{ incident.title }}</h1>
+    {% if incident.status.id == 1 %}
+        <p>Status: <span class="badge badge-success">OPEN</span></p>
+    {% elseif incident.status.id == 2 %}
+        <p>Status: <span class="badge badge-warning">CLOSED</span></p>
+    {% elseif incident.status.id == 3 %}
+        <p>Status: <span class="badge badge-info">LOCKED</span></p>
+        <p>Locked by: {{ incident.owner.username }}</p>
+    {% endif %}
+    <p>Priority: {{ incident.priority }}</p>
+    <p>Category: {{ incident.category.title }}</p>
+    <p>Location: {{ incident.location.title }}</p>
+    <hr>
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link active" data-toggle="tab" href="#desc">Description</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#info">Information</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#comment">Comments</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link bg-dark text-white" data-toggle="tab" href="#addcomment">Add Comment</a>
+        </li>
+    </ul>
+    <div id="incidentTab" class="tab-content">
+        <div class="tab-pane fade show active pt-4" id="desc">
+            <p>{{ incident.description }}</p>
+        </div>
+        <div class="tab-pane fade pt-4" id="info">
+            <div class="row">
+                <div class="col-3 btn-group-vertical">
+                    {% if incident.status.id == 1 %}
+                        <a href="{{ path('incident_change_lock', { 'id': incident.id, 'lockarg': 0 }) }}" class="btn btn-primary">Lock incident</a>
+                    {% elseif incident.status.id ==2 %}
+                        <a href="{{ path('incident_change_status', { 'id': incident.id, 'status': 1 }) }}" class="btn btn-primary">Open Ticket</a>
+                    {% elseif incident.status.id == 3 and incident.owner.id == app.user.id %}
+                        <a href="{{ path('incident_edit', { 'id': incident.id }) }}" class="btn btn-primary ">Edit incident</a>
+                        <a href="{{ path('incident_change_lock', { 'id': incident.id, 'lockarg': 1 }) }}" class="btn btn-primary">Unlock incident</a>
+                        <a href="{{ path('incident_change_status', { 'id': incident.id, 'status': 2 }) }}" class="btn btn-primary ">Close ticket</a>
+                    {% else %}
+                        <a class="btn btn-primary disabled">Incident locked by {{ incident.owner.username }}</a>
+                    {% endif %}
+                </div>
+                <div class="col-9">
+                    <ul>
+                        <li>Created by {{ incident.createdby.username }}</li>
+                        <li>Created on {{ incident.createdon.date }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade " id="comment">
+            <table class="table table-hover">
+                <thead>
+                <tr class="row">
+                    <th class="col-2" scope="col">Placed by</th>
+                    <th class="col-3" scope="col">Title</th>
+                    <th class="col-7" scope="col">Message</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% if comments %}
+                    {% for comment in comments %}
+                        <tr class="row">
+                            <td class="col-2">{{ comment.owner.username }}</td>
+                            <td class="col-3">{{ comment.title }}</td>
+                            <td class="col-5">{{ comment.message }}</td>
+                            <td class="col-1">
+                                {% if comment.owner.id == app.user.id %}
+                                    <a href="javascript:void(0)" onclick="deleteComment({{ comment.id }})" class="btn btn-sm btn-danger">X</a>
+                                {% endif %}
+                            </td>
+                            <td class="col-1">
+                                {% if comment.owner.id == app.user.id %}
+                                    <a href="{{ path('comment_edit', {'id': incident.id, 'comment_id': comment.id }) }}" class="btn btn-sm btn-warning">Edit</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+        <div class="tab-pane fade" id="addcomment">
+            <div class="container p-4">
+                {{ form_errors(form) }}
+                {{ form_start(form) }}
+                {{ form_widget(form) }}
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block javascripts %}
+    <script>
+        function deleteComment(id){
+            const comment = "{{ path('incident_show', {'id': incident.id}) }}/" + id;
+            fetch(comment, {
+                method: 'DELETE'
+            }).then(res => window.location.reload());
+        }
+    </script>
+{% endblock %}

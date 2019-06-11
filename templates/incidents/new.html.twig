@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+{% form_theme form 'inc/form/error.html.twig' %}
+{% block body %}
+    {% if app.request.get('_route') == 'incident_add' %}
+        <h1>Add incident</h1>
+    {% endif %}
+    {{ form_errors(form) }}
+    {{ form_start(form) }}
+    {{ form_widget(form) }}
+    {{ form_end(form) }}
+{% endblock %}

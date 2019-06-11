@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+{% block body %}
+    {% if searchResult %}
+        {% if searchResult['incident']|default(false) %}
+            <h1>Incidents</h1>
+            <table class="table table-hover">
+            <thead>
+            <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Location</th>
+                <th scope="col">Status</th>
+                <th scope="col">Category</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for incident in searchResult['incident'] %}
+                {% if incident.status.id == 1 %}
+                    <tr class="table-success">
+                {% elseif incident.status.id == 2 %}
+                    <tr class="table-warning">
+                {% elseif incident.status.id == 3 %}
+                    <tr class="table-info">
+                {% else %}
+                    <tr>
+                {% endif %}
+                <td><a href="{{ path('incident_show', { 'id': incident.id }) }}">{{ incident.title }}</a></td>
+                <td>{{ incident.location.title }}</td>
+                <td>{{ incident.status.title }}</td>
+                <td>{{ incident.category.title }}</td>
+                <td><a href="{{ path('incident_show', {'id': incident.id}) }}" class="btn btn-sm btn-info">Show</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            </table>
+        {% endif %}
+        {% if searchResult['comment']|default(false) %}
+            <h1>Comments</h1>
+            <table class="table table-hover">
+                <thead>
+                <tr class="row">
+                    <th class="col-2" scope="col">Placed by</th>
+                    <th class="col-3" scope="col">Title</th>
+                    <th class="col-7" scope="col">Message</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for comment in searchResult['comment'] %}
+                    <tr class="row">
+                        <td class="col-2">{{ comment.owner.username }}</td>
+                        <td class="col-3">{{ comment.title }}</td>
+                        <td class="col-4">{{ comment.message }}</td>
+                        <td class="col-1">
+                            {% if comment.owner.id == app.user.id %}
+                                <a href="javascript:void(0)" onclick="deleteComment({{ comment.id }})" class="btn btn-sm btn-danger">X</a>
+                            {% endif %}
+                        </td>
+                        <td class="col-1">
+                            {% if comment.owner.id == app.user.id %}
+                                <a href="{{ path('comment_edit', {'id': comment.incident.id, 'comment_id': comment.id }) }}" class="btn btn-sm btn-warning">Edit</a>
+                            {% endif %}
+                        </td>
+                        <td class="col-1">
+                            <a href="{{ path('incident_show', {'id': comment.incident.id}) }}" class="btn btn-sm btn-info">Show</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+        {% else %}
+            <h1>Could not find an entity</h1>
+            <hr>
+            <h3>Available parameter's:</h3>
+            <ul>
+                <li>"i " for incident(Title, description, and id)</li>
+                <li>"c " for comment(Title and message)</li>
+            </ul>
+            <p>Given parameter: {{ searchParam }}</p>
+            <p>Search query: {{ searchQuery }}</p>
+    {% endif %}
+{% endblock %}
