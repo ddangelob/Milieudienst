@@ -7,7 +7,8 @@
         {% block stylesheets %}{% endblock %}
     </head>
     <body>
-    {{ render(controller('App\\Controller\\LayoutController::navbar')) }}
+        {{ render(controller('App\\Controller\\LayoutController::navbar')) }}
+        {{ include('inc/message.html.twig') }}
         <div class="container">
             {% block body %}{% endblock %}
         </div>

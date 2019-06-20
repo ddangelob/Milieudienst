@@ -1,6 +1,7 @@
 <?php
 namespace App\Controller;
 
+use App\Repository\IncidentRepository;
 use App\Service\Search;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,13 +14,18 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
  * @IsGranted("IS_AUTHENTICATED_FULLY")
  */
 class PortalController extends AbstractController{
+    private $incident_repository;
+    public function __construct(IncidentRepository $incident_repository)
+    {
+        $this->incident_repository = $incident_repository;
+    }
+
     /**
      * @Route("/", name="home_page")
      */
     public function index(){
-        $incident = $this->getDoctrine()->getRepository('App:Incident');
-        $incidents = $incident->getRecent(5, 0);
-        $incidentStats = $incident->getStatistics();
+        $incidents = $this->incident_repository->getRecent(5, 0);
+        $incidentStats = $this->incident_repository->getStatistics();
         $user = $this->getUser()->getRoles();
         return $this->render('portal/index.html.twig', ['incidents' => $incidents, 'user' => $user, 'stats' => $incidentStats]);
     }

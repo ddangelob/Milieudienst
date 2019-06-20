@@ -8,6 +8,8 @@ use App\Entity\Comment;
 // Form Handlers
 use App\Form\Handler\IncidentFormHandler;
 use App\Form\Handler\CommentFormHandler;
+use App\Repository\IncidentRepository;
+use App\Repository\StatusRepository;
 use Hostnet\Component\FormHandler\HandlerFactoryInterface;
 
 // HTTP and routing
@@ -24,12 +26,19 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
  * @IsGranted("IS_AUTHENTICATED_FULLY")
  */
 class IncidentController extends AbstractController{
+    private $incident_repository;
+    private $status_repository;
+    public function __construct(IncidentRepository $incident_repository, StatusRepository $status_repository)
+    {
+        $this->incident_repository = $incident_repository;
+        $this->status_repository = $status_repository;
+    }
+
     /**
      * @Route("/incidents", name="incident_page")
      */
     public function incident_page(){
-        $incident = $this->getDoctrine()->getRepository('App:Incident');
-        $incidents = $incident->getRecent(50, 0);
+        $incidents = $this->incident_repository->getRecent(50, 0);
         return $this->render('portal/incident.html.twig', ['incidents' => $incidents]);
     }
 
@@ -52,8 +61,7 @@ class IncidentController extends AbstractController{
      * @Route("/incidents/locked", name="locked_incident_page")
      */
     public function locked_incident_page(){
-        $user = $this->getUser();
-        $incidents = $user->getLockedIncidents();
+        $incidents = $this->getUser()->getLockedIncidents();
         return $this->render('portal/incident.html.twig', ['incidents' => $incidents]);
     }
 
@@ -73,25 +81,20 @@ class IncidentController extends AbstractController{
      */
     public function incident_change_lock($id, $lockarg){
         // Get user and incident.
-        $em = $this->getDoctrine()->getManager();
-        $incident = $em->getRepository('App:Incident')->find($id);
-        $user = $this->getUser();
-
+        $incident = $this->incident_repository->find($id);
         if($lockarg == 0){
             // Ticket needs to be locked and the user isn't the owner of the incident
-            $status = $em->getRepository('App:Status')->find(3);
-            $incident->setOwner($user);
-            $incident->setStatus($status);
-            $em->flush();
+            $incident->setOwner($this->getUser());
+            $incident->setStatus($this->status_repository->find(3));
+            $this->incident_repository->save($incident);
         }
-        if($user === $incident->getOwner()){
+        if($this->getUser() === $incident->getOwner()){
             // User is owner of ticket
             if($lockarg == 1){
                 // Ticket needs to be unlocked
-                $status = $em->getRepository('App:Status')->find(1);
-                $incident->removeOwner($user);
-                $incident->setStatus($status);
-                $em->flush();
+                $incident->removeOwner($this->getUser());
+                $incident->setStatus($this->status_repository->find(1));
+                $this->incident_repository->save($incident);
             }
         }
         return $this->redirectToRoute('incident_show', ['id' => $id]);
@@ -102,19 +105,17 @@ class IncidentController extends AbstractController{
      * @Route("/incidents/show/{id}/change_status/{status}", name="incident_change_status")
      */
     public function incident_close($id, $status){
-        $em = $this->getDoctrine()->getManager();
-        $user = $this->getUser();
-        $incident = $em->getRepository('App:Incident')->find($id);
+        $incident = $this->incident_repository->find($id);
         if($status == 1){
-            $statusObj = $em->getRepository('App:Status')->find($status);
+            $statusObj = $this->status_repository->find($status);
             $incident->setStatus($statusObj);
-            $em->flush();
+            $this->incident_repository->save($incident);
         }
-        if($user === $incident->getOwner()){
-            $status = $em->getRepository('App:Status')->find($status);
-            $incident->setStatus($status);
-            $incident->removeOwner($user);
-            $em->flush();
+        if($this->getUser() === $incident->getOwner()){
+            $statusObj = $this->status_repository->find($status);
+            $incident->setStatus($statusObj);
+            $incident->removeOwner($this->getUser());
+            $this->incident_repository->save($incident);
         }
         return $this->redirectToRoute('incident_show', ['id' => $id]);
     }
@@ -126,7 +127,7 @@ class IncidentController extends AbstractController{
     public function incident_edit(Request $request,HandlerFactoryInterface $handler, $id)
     {
         $handler = $handler->create(IncidentFormHandler::class);
-        $incident = $this->getDoctrine()->getRepository('App:Incident')->find($id);
+        $incident = $this->incident_repository->find($id);
         if($handler->handle($request, $incident)){
             return $this->redirectToRoute('incident_show', ['id' => $incident->getId()]);
         }
@@ -141,13 +142,12 @@ class IncidentController extends AbstractController{
     public function incident_show(Request $request, HandlerFactoryInterface $handler, $id)
     {
         $handler = $handler->create(CommentFormHandler::class);
+        $incident = $this->incident_repository->find($id);
         $comment = new Comment();
-        $comment->setIncident($this->getDoctrine()->getRepository('App:Incident')->find($id));
+        $comment->setIncident($incident);
         if($handler->handle($request, $comment)){
             return $this->redirectToRoute('incident_show', ['id' => $id]);
         }
-
-        $incident = $this->getDoctrine()->getRepository('App:Incident')->find($id);
         $comments = $incident->getComment();
         return $this->render('incidents/show.html.twig', ['incident' => $incident, 'comments' => $comments, 'form' => $handler->getForm()->createView()]);
     }

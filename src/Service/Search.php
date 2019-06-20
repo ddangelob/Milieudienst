@@ -19,7 +19,7 @@ class Search
             foreach($models as $model){
                 // Turn array with fields in to string separated with a comma
                 $implodedFields = implode(",", $fields[$model]);
-                $sql = "SELECT *, MATCH (".$implodedFields.") AGAINST (:Search) as score FROM " . $model . " WHERE MATCH (" . $implodedFields . ") AGAINST (:Search) > 0 ORDER BY score DESC;";
+                $sql = "SELECT *, MATCH (".$implodedFields.") AGAINST (:Search) as score FROM ".$model." WHERE MATCH (".$implodedFields.") AGAINST (:Search) > 0 ORDER BY score DESC;";
                 // Prepare the SQL query
                 $statement = $this->em->getConnection()->prepare($sql);
                 // Add quotes to string and bind the search parameter to the SQL query

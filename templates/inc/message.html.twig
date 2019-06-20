@@ -1,0 +1,9 @@
+{% if messages|default(false) %}
+    {% for message in messages %}
+        <div class="alert alert-warning alert-dismissible fade show mr-5 ml-5" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    {% endfor %}
+{% endif %}

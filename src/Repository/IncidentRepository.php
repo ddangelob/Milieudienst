@@ -85,15 +85,9 @@ class IncidentRepository extends ServiceEntityRepository
         ];
         return $results;
     }
-    public function searchFor($searchQuery, $searchTerms){
-        if(count($searchTerms === 0)){
-            // Search everything because there isn't a specific table we can search in
-        }
-
-        if(count($searchTerms) > 0){
-            // There is an search term so look in the given terms
-
-        }
+    public function save(Incident $incident){
+        $this->_em->persist($incident);
+        $this->_em->flush();
     }
 }
 
