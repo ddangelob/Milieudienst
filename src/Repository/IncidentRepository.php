@@ -3,6 +3,8 @@
 namespace App\Repository;
 
 use App\Entity\Incident;
+use App\Entity\Status;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
@@ -88,6 +90,17 @@ class IncidentRepository extends ServiceEntityRepository
     public function save(Incident $incident){
         $this->_em->persist($incident);
         $this->_em->flush();
+    }
+    public function setStatus(Incident $incident,Status $status, User $user){
+        if($status->getId() == 1){
+            $incident->removeOwner($user);
+            $incident->setStatus($status);
+        }
+        if($status->getId() == 3){
+            $incident->setOwner($user);
+            $incident->setStatus($status);
+        }
+        $this->save($incident);
     }
 }
 

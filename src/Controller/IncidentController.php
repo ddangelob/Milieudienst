@@ -19,8 +19,7 @@ use Symfony\Component\HttpFoundation\Request;
 // Controller related
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
-
-
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 
 /**
  * @IsGranted("IS_AUTHENTICATED_FULLY")
@@ -36,14 +35,16 @@ class IncidentController extends AbstractController{
 
     /**
      * @Route("/incidents", name="incident_page")
+     * @Template("portal/incident.html.twig")
      */
     public function incident_page(){
         $incidents = $this->incident_repository->getRecent(50, 0);
-        return $this->render('portal/incident.html.twig', ['incidents' => $incidents]);
+        return array('incidents' => $incidents );
     }
 
     /**
      * @Route("/incidents/add", name="incident_add", methods={"GET","POST"})
+     * @Template("incidents/new.html.twig")
      */
     public function incident_add(Request $request, HandlerFactoryInterface $handler)
     {
@@ -53,53 +54,40 @@ class IncidentController extends AbstractController{
             return $this->redirectToRoute('incident_show', ['id' => $incident->getId()]);
         }
 
-        return $this->render('incidents/new.html.twig', ['form' => $handler->getForm()->createView()]);
+        return array('form' => $handler->getForm()->createView());
     }
-
 
     /**
      * @Route("/incidents/locked", name="locked_incident_page")
+     * @Template("portal/incident.html.twig")
      */
     public function locked_incident_page(){
-        $incidents = $this->getUser()->getLockedIncidents();
-        return $this->render('portal/incident.html.twig', ['incidents' => $incidents]);
+        return array('incidents' => $this->getUser()->getLockedIncidents());
     }
-
 
     /**
      * @Route("/incidents/{page}", name="incident_pagination", requirements={"page"="\d+"})
+     * @Template("portal/incident.html.twig")
      */
     public function incident_pagination($page){
-        $incident = $this->getDoctrine()->getRepository('App:Incident');
-        $incidents = $incident->getRecent(50, $page * 50);
-        return $this->render('portal/incident.html.twig', ['incidents' => $incidents]);
+        return array('incidents' => $this->incident_repository->getRecent(50, ($page - 1) * 50));
     }
-
 
     /**
      * @Route("/incidents/show/{id}/change_lock/{lockarg}", name="incident_change_lock", requirements={"page"="\d+"})
      */
     public function incident_change_lock($id, $lockarg){
-        // Get user and incident.
         $incident = $this->incident_repository->find($id);
+        // Get user and incident.
         if($lockarg == 0){
             // Ticket needs to be locked and the user isn't the owner of the incident
-            $incident->setOwner($this->getUser());
-            $incident->setStatus($this->status_repository->find(3));
-            $this->incident_repository->save($incident);
+            $this->incident_repository->setStatus($incident, $this->status_repository->find(3), $this->getUser());
         }
-        if($this->getUser() === $incident->getOwner()){
-            // User is owner of ticket
-            if($lockarg == 1){
-                // Ticket needs to be unlocked
-                $incident->removeOwner($this->getUser());
-                $incident->setStatus($this->status_repository->find(1));
-                $this->incident_repository->save($incident);
-            }
+        if($this->getUser() === $incident->getOwner() && $lockarg == 1){
+            $this->incident_repository->setStatus($incident, $this->status_repository->find(1), $this->getUser());
         }
         return $this->redirectToRoute('incident_show', ['id' => $id]);
     }
-
 
     /**
      * @Route("/incidents/show/{id}/change_status/{status}", name="incident_change_status")
@@ -120,7 +108,6 @@ class IncidentController extends AbstractController{
         return $this->redirectToRoute('incident_show', ['id' => $id]);
     }
 
-
     /**
      * @Route("/incidents/show/{id}/edit", name="incident_edit")
      */
@@ -135,7 +122,6 @@ class IncidentController extends AbstractController{
         return $this->render('incidents/update.html.twig', ['form' => $handler->getForm()->createView()]);
     }
 
-
     /**
      * @Route("/incidents/show/{id}", name="incident_show")
      */
@@ -148,7 +134,6 @@ class IncidentController extends AbstractController{
         if($handler->handle($request, $comment)){
             return $this->redirectToRoute('incident_show', ['id' => $id]);
         }
-        $comments = $incident->getComment();
-        return $this->render('incidents/show.html.twig', ['incident' => $incident, 'comments' => $comments, 'form' => $handler->getForm()->createView()]);
+        return $this->render('incidents/show.html.twig', ['incident' => $incident, 'comments' => $incident->getComment(), 'form' => $handler->getForm()->createView()]);
     }
 }
